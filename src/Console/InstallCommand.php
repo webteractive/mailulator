@@ -22,8 +22,8 @@ class InstallCommand extends Command
         $this->components->info('Installing Mailulator resources.');
 
         collect([
-            'Service Provider' => fn () => $this->callSilent('vendor:publish', ['--tag' => 'mailulator-provider', '--force' => false]) == 0,
-            'Configuration' => fn () => $this->callSilent('vendor:publish', ['--tag' => 'mailulator-config', '--force' => false]) == 0,
+            'Service Provider' => fn () => $this->callSilent('vendor:publish', ['--tag' => 'mailulator-provider', '--force' => false]) === 0,
+            'Configuration' => fn () => $this->callSilent('vendor:publish', ['--tag' => 'mailulator-config', '--force' => false]) === 0,
         ])->each(fn ($task, $description) => $this->components->task($description, $task));
 
         $this->registerMailulatorServiceProvider();
@@ -36,7 +36,7 @@ class InstallCommand extends Command
             });
         }
 
-        $this->maybeSeedFirstInbox();
+        $this->ensureDefaultInbox();
 
         $this->components->info('Mailulator scaffolding installed successfully.');
 
@@ -84,7 +84,7 @@ class InstallCommand extends Command
         ));
     }
 
-    protected function maybeSeedFirstInbox(): void
+    protected function ensureDefaultInbox(): void
     {
         if (! DB::connection('mailulator')->getSchemaBuilder()->hasTable('inboxes')) {
             return;
@@ -94,20 +94,15 @@ class InstallCommand extends Command
             return;
         }
 
-        if (! $this->confirm('Create a first inbox now?', true)) {
-            return;
-        }
-
-        $name = $this->ask('Inbox name', 'Default');
         $plaintext = Str::random(40);
 
         Inbox::query()->create([
-            'name' => $name,
+            'name' => 'Default',
             'api_key' => Inbox::hashToken($plaintext),
         ]);
 
         $this->newLine();
-        $this->components->info('Inbox created. Save this token — it will not be shown again:');
+        $this->components->info('Default inbox created. Save this token — it will not be shown again:');
         $this->line("  <fg=yellow>{$plaintext}</>");
         $this->newLine();
     }

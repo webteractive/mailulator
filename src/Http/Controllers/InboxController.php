@@ -32,9 +32,14 @@ class InboxController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'retention_days' => ['nullable', 'integer', 'min:1'],
+            'color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
         ]);
 
-        $result = $create($data['name'], $data['retention_days'] ?? null);
+        $result = $create(
+            $data['name'],
+            $data['retention_days'] ?? null,
+            isset($data['color']) ? ['color' => $data['color']] : null,
+        );
 
         return response()->json([
             'inbox' => new InboxResource($result['inbox']),
@@ -47,7 +52,27 @@ class InboxController extends Controller
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
             'retention_days' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'color' => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
         ]);
+
+        if ($inbox->name === 'Default' && isset($data['name']) && $data['name'] !== 'Default') {
+            return response()->json([
+                'message' => 'The Default inbox cannot be renamed.',
+            ], 422);
+        }
+
+        if (array_key_exists('color', $data)) {
+            $settings = $inbox->settings ?? [];
+
+            if ($data['color'] === null) {
+                unset($settings['color']);
+            } else {
+                $settings['color'] = $data['color'];
+            }
+
+            $inbox->settings = $settings ?: null;
+            unset($data['color']);
+        }
 
         $inbox->fill($data)->save();
 
@@ -56,6 +81,18 @@ class InboxController extends Controller
 
     public function destroy(Inbox $inbox): JsonResponse
     {
+        if ($inbox->name === 'Default') {
+            return response()->json([
+                'message' => 'The Default inbox cannot be deleted.',
+            ], 422);
+        }
+
+        if (Inbox::query()->count() <= 1) {
+            return response()->json([
+                'message' => 'Cannot delete the last inbox. Mailulator requires at least one inbox to exist.',
+            ], 422);
+        }
+
         $inbox->delete();
 
         return response()->json(['deleted' => true]);

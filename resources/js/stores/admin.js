@@ -19,10 +19,10 @@ export const useAdminStore = defineStore('admin', {
         this.loading = false
       }
     },
-    async create({ name, retention_days }) {
+    async create({ name, retention_days, color }) {
       this.saving = true
       try {
-        const { data } = await http.post('/inboxes', { name, retention_days })
+        const { data } = await http.post('/inboxes', { name, retention_days, color })
         this.inboxes.push(data.inbox)
         this.revealKey = { inboxId: data.inbox.id, plaintext: data.plaintext_key }
       } finally {

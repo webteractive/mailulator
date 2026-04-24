@@ -16,9 +16,12 @@ class InboxResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'retention_days' => $this->retention_days,
-            'last_used_at' => optional($this->last_used_at)->toIso8601String(),
+            'color' => $this->settings['color'] ?? null,
+            'settings' => $this->settings ?? [],
+            'is_default' => $this->name === 'Default',
+            'last_used_at' => $this->last_used_at?->toIso8601String(),
             'unread_count' => $this->when(isset($this->unread_count), $this->unread_count),
-            'created_at' => optional($this->created_at)->toIso8601String(),
+            'created_at' => $this->created_at?->toIso8601String(),
         ];
     }
 }

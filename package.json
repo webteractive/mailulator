@@ -7,8 +7,9 @@
     "build": "vite build"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.0",
+    "@vitejs/plugin-vue": "^6.0",
     "autoprefixer": "^10.4",
+    "concurrently": "^9.2.1",
     "laravel-echo": "^1.16",
     "postcss": "^8.4",
     "pusher-js": "^8.4",
@@ -16,7 +17,13 @@
     "vite": "^8.0.10"
   },
   "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-vue-next": "^1.0.0",
     "pinia": "^2.1",
+    "reka-ui": "^2.9.6",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss-animate": "^1.0.7",
     "vue": "^3.4",
     "vue-router": "^4.3"
   }

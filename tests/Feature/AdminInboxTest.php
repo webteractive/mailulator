@@ -78,7 +78,12 @@ it('updates inbox name and retention', function () {
         ->and($inbox->retention_days)->toBe(7);
 });
 
-it('deletes an inbox and cascades emails', function () {
+it('deletes an inbox and cascades emails when more than one exists', function () {
+    Inbox::query()->create([
+        'name' => 'Keeper',
+        'api_key' => Inbox::hashToken(Str::random(40)),
+    ]);
+
     $inbox = Inbox::query()->create([
         'name' => 'Temp',
         'api_key' => Inbox::hashToken(Str::random(40)),
@@ -93,5 +98,79 @@ it('deletes an inbox and cascades emails', function () {
 
     $this->deleteJson("/mailulator/api/inboxes/{$inbox->id}")->assertOk();
 
-    expect(Inbox::query()->count())->toBe(0);
+    expect(Inbox::query()->count())->toBe(1);
+});
+
+it('refuses to delete the last remaining inbox', function () {
+    $inbox = Inbox::query()->create([
+        'name' => 'Only',
+        'api_key' => Inbox::hashToken(Str::random(40)),
+    ]);
+
+    $this->deleteJson("/mailulator/api/inboxes/{$inbox->id}")
+        ->assertStatus(422)
+        ->assertJsonPath('message', 'Cannot delete the last inbox. Mailulator requires at least one inbox to exist.');
+
+    expect(Inbox::query()->count())->toBe(1);
+});
+
+it('refuses to rename the Default inbox', function () {
+    $default = Inbox::query()->create([
+        'name' => 'Default',
+        'api_key' => Inbox::hashToken(Str::random(40)),
+    ]);
+
+    $this->patchJson("/mailulator/api/inboxes/{$default->id}", ['name' => 'Renamed'])
+        ->assertStatus(422)
+        ->assertJsonPath('message', 'The Default inbox cannot be renamed.');
+
+    expect($default->fresh()->name)->toBe('Default');
+});
+
+it('refuses to delete the Default inbox even when others exist', function () {
+    $default = Inbox::query()->create([
+        'name' => 'Default',
+        'api_key' => Inbox::hashToken(Str::random(40)),
+    ]);
+
+    Inbox::query()->create([
+        'name' => 'Other',
+        'api_key' => Inbox::hashToken(Str::random(40)),
+    ]);
+
+    $this->deleteJson("/mailulator/api/inboxes/{$default->id}")
+        ->assertStatus(422)
+        ->assertJsonPath('message', 'The Default inbox cannot be deleted.');
+
+    expect(Inbox::query()->find($default->id))->not->toBeNull();
+});
+
+it('stores inbox color in settings json', function () {
+    $response = $this->postJson('/mailulator/api/inboxes', [
+        'name' => 'Tinted',
+        'color' => '#a1b2c3',
+    ])->assertCreated();
+
+    $inbox = Inbox::query()->findOrFail($response->json('inbox.id'));
+    expect($inbox->settings)->toBe(['color' => '#a1b2c3'])
+        ->and($response->json('inbox.color'))->toBe('#a1b2c3');
+});
+
+it('rejects malformed inbox colors', function () {
+    $this->postJson('/mailulator/api/inboxes', [
+        'name' => 'Bad',
+        'color' => 'red',
+    ])->assertStatus(422)->assertJsonValidationErrors(['color']);
+});
+
+it('clears inbox color when set to null', function () {
+    $inbox = Inbox::query()->create([
+        'name' => 'Tinted',
+        'api_key' => Inbox::hashToken(Str::random(40)),
+        'settings' => ['color' => '#a1b2c3'],
+    ]);
+
+    $this->patchJson("/mailulator/api/inboxes/{$inbox->id}", ['color' => null])->assertOk();
+
+    expect($inbox->fresh()->settings)->toBeNull();
 });

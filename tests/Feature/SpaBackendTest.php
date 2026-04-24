@@ -45,7 +45,7 @@ it('lists inboxes visible to the user', function () {
     expect($ids->all())->toBe([$this->inbox->id]);
 });
 
-it('marks an email read on POST /read', function () {
+it('toggles an email read state on POST /read', function () {
     $email = $this->inbox->emails()->create([
         'from' => 'a@b.com',
         'to' => ['c@d.com'],
@@ -57,8 +57,10 @@ it('marks an email read on POST /read', function () {
     expect($email->read_at)->toBeNull();
 
     $this->postJson("/mailulator/api/emails/{$email->id}/read")->assertOk();
-
     expect($email->fresh()->read_at)->not->toBeNull();
+
+    $this->postJson("/mailulator/api/emails/{$email->id}/read")->assertOk();
+    expect($email->fresh()->read_at)->toBeNull();
 });
 
 it('preview route sends CSP sandbox headers', function () {

@@ -20,5 +20,22 @@ export const useInboxStore = defineStore('inboxes', {
         this.loading = false
       }
     },
+    async refresh() {
+      try {
+        const { data } = await http.get('/inboxes')
+        const fresh = data.data ?? data
+        for (const incoming of fresh) {
+          const existing = this.list.find(i => i.id === incoming.id)
+          if (existing) Object.assign(existing, incoming)
+          else this.list.push(incoming)
+        }
+        this.list = this.list.filter(i => fresh.some(f => f.id === i.id))
+      } catch {}
+    },
+    adjustUnread(inboxId, delta) {
+      const inbox = this.list.find(i => i.id === inboxId)
+      if (!inbox) return
+      inbox.unread_count = Math.max(0, (inbox.unread_count ?? 0) + delta)
+    },
   },
 })

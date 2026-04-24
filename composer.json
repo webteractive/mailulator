@@ -51,16 +51,35 @@
         }
     },
     "scripts": {
-        "post-autoload-dump": "@prepare",
+        "post-autoload-dump": [
+            "@clear",
+            "@prepare"
+        ],
         "prepare": "@php vendor/bin/testbench package:discover --ansi",
         "build": "@php vendor/bin/testbench workbench:build --ansi",
+        "fresh": [
+            "@php vendor/bin/testbench package:drop-sqlite-db --ansi",
+            "@php -r \"@unlink('vendor/orchestra/testbench-core/laravel/database/mailulator.sqlite');\"",
+            "@build"
+        ],
         "serve": [
+            "Composer\\Config::disableProcessTimeout",
             "@build",
-            "@php vendor/bin/testbench serve"
+            "@php vendor/bin/testbench serve --ansi"
+        ],
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "@build",
+            "npx concurrently -k -n vite,serve -c cyan,magenta \"npm:dev\" \"php vendor/bin/testbench serve --ansi\""
         ],
         "test": "@php vendor/bin/pest",
         "analyse": "@php vendor/bin/phpstan analyse",
-        "format": "@php vendor/bin/pint"
+        "format": "@php vendor/bin/pint",
+        "clear": "@php vendor/bin/testbench package:purge-skeleton --ansi",
+        "lint": [
+            "@php vendor/bin/pint --ansi",
+            "@php vendor/bin/phpstan analyse --verbose --ansi"
+        ]
     },
     "config": {
         "sort-packages": true,

@@ -33,16 +33,14 @@ class EmailController extends Controller
 
         $email->load('attachments');
 
-        return (new EmailResource($email))->additional([]);
+        return new EmailResource($email);
     }
 
     public function read(Request $request, Email $email): JsonResponse
     {
         $this->ensureVisible($request, $email->inbox);
 
-        if (! $email->read_at) {
-            $email->forceFill(['read_at' => now()])->save();
-        }
+        $email->forceFill(['read_at' => $email->read_at ? null : now()])->save();
 
         return response()->json(['read_at' => $email->read_at?->toIso8601String()]);
     }

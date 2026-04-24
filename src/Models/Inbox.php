@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property string $api_key
  * @property int|null $retention_days
+ * @property array<string, mixed>|null $settings
  * @property Carbon|null $last_used_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -29,6 +30,7 @@ class Inbox extends Model
     protected $casts = [
         'last_used_at' => 'datetime',
         'retention_days' => 'integer',
+        'settings' => 'array',
     ];
 
     public function emails(): HasMany
