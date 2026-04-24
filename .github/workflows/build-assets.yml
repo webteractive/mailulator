@@ -1,0 +1,38 @@
+name: build-assets
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'resources/js/**'
+      - 'resources/css/**'
+      - 'package.json'
+      - 'vite.config.js'
+      - 'tailwind.config.js'
+      - 'postcss.config.js'
+      - 'dist/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Fail if dist/ is stale
+        run: |
+          if ! git diff --quiet --exit-code -- dist/; then
+            echo "::error::dist/ is stale. Run 'npm run build' locally and commit the result."
+            git --no-pager diff --stat -- dist/
+            exit 1
+          fi

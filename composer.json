@@ -1,0 +1,84 @@
+{
+    "name": "webteractive/mailulator",
+    "description": "Self-hosted Laravel-native email testing service. Captures outbound email for inspection — installable into any Laravel app.",
+    "keywords": [
+        "laravel",
+        "mail",
+        "email",
+        "testing",
+        "mailtrap",
+        "staging"
+    ],
+    "homepage": "https://github.com/webteractive/mailulator",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Glen Bangkila",
+            "email": "glen@more.dev",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "illuminate/contracts": "^10.0||^11.0||^12.0||^13.0",
+        "illuminate/database": "^10.0||^11.0||^12.0||^13.0",
+        "illuminate/http": "^10.0||^11.0||^12.0||^13.0",
+        "illuminate/mail": "^10.0||^11.0||^12.0||^13.0",
+        "illuminate/support": "^10.0||^11.0||^12.0||^13.0",
+        "symfony/mailer": "^6.0||^7.0||^8.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "^2.9||^3.0",
+        "laravel/pint": "^1.14",
+        "mockery/mockery": "^1.6",
+        "orchestra/testbench": "^8.22||^9.0||^10.0||^11.0",
+        "pestphp/pest": "^3.8",
+        "pestphp/pest-plugin-arch": "^3.0",
+        "pestphp/pest-plugin-laravel": "^3.0",
+        "phpstan/phpstan": "^1.10||^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Webteractive\\Mailulator\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Webteractive\\Mailulator\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/",
+            "Workbench\\Database\\Factories\\": "workbench/database/factories/",
+            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": "@prepare",
+        "prepare": "@php vendor/bin/testbench package:discover --ansi",
+        "build": "@php vendor/bin/testbench workbench:build --ansi",
+        "serve": [
+            "@build",
+            "@php vendor/bin/testbench serve"
+        ],
+        "test": "@php vendor/bin/pest",
+        "analyse": "@php vendor/bin/phpstan analyse",
+        "format": "@php vendor/bin/pint"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Webteractive\\Mailulator\\MailulatorServiceProvider"
+            ],
+            "aliases": {
+                "Mailulator": "Webteractive\\Mailulator\\Mailulator"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

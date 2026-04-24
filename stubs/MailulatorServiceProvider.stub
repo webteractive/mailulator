@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Providers;
+
+use Illuminate\Support\Facades\Gate;
+use Webteractive\Mailulator\MailulatorApplicationServiceProvider;
+
+class MailulatorServiceProvider extends MailulatorApplicationServiceProvider
+{
+    public function boot(): void
+    {
+        parent::boot();
+
+        // Mailulator::canViewInbox(fn ($user, $inboxId) => $user->inboxes->contains($inboxId));
+    }
+
+    /**
+     * Determine who can access Mailulator in non-local environments.
+     */
+    protected function gate(): void
+    {
+        Gate::define('viewMailulator', function ($user = null) {
+            return in_array(optional($user)->email, [
+                //
+            ]);
+        });
+    }
+}

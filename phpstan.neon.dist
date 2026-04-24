@@ -1,0 +1,24 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - src
+        - config
+        - database
+
+    level: 4
+
+    tmpDir: build/phpstan
+
+    checkModelProperties: false
+
+    ignoreErrors:
+        # Relation query builders forwarding local scopes — Larastan can't see these.
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany::search\(\)#'
+        # Eloquent relation generics don't narrow Model to concrete child in closures.
+        - '#should return Webteractive\\Mailulator\\Models\\Email but returns Illuminate\\Database\\Eloquent\\Model#'
+        # env() in package config — Larastan's config-dir detection expects a Laravel app layout.
+        -
+            message: '#Called ''env''#'
+            path: config/mailulator.php
