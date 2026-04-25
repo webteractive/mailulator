@@ -104,8 +104,10 @@ class InstallCommand extends Command
         ]);
 
         $this->newLine();
-        $this->components->info('Default inbox created. Save this token — it will not be shown again:');
-        $this->line("  <fg=yellow>{$plaintext}</>");
+        $this->components->info('Default inbox created.');
+        $this->line('  Same-app sender? Set <fg=cyan>MAIL_MAILER=mailulator</> and you are done.');
+        $this->line('  Sending from a separate app? Save this token — it will not be shown again:');
+        $this->line("    <fg=yellow>{$plaintext}</>");
         $this->newLine();
     }
 }

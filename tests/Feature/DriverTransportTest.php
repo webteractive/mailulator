@@ -126,3 +126,68 @@ it('delivers end-to-end through the mailulator ingest endpoint', function () {
         ->and($email->from)->toBe('sender@example.com')
         ->and($email->to)->toBe(['user@example.com']);
 });
+
+it('delivers internally to the default inbox when no url is configured', function () {
+    $default = Inbox::query()->forceCreate([
+        'name' => 'Default',
+        'api_key' => Inbox::hashToken(Str::random(40)),
+        'is_default' => true,
+    ]);
+
+    config()->set('mailulator.driver.url', null);
+    config()->set('mailulator.driver.token', null);
+    config()->set('mailulator.receiver.enabled', true);
+    config()->set('mailulator.driver.on_failure', 'throw');
+
+    Http::preventStrayRequests();
+
+    Mail::raw('Internal hello', function ($msg) {
+        $msg->from('sender@example.com')
+            ->to('user@example.com')
+            ->subject('Internal');
+    });
+
+    expect(Email::query()->count())->toBe(1);
+    $email = Email::query()->first();
+    expect($email->inbox_id)->toBe($default->id)
+        ->and($email->subject)->toBe('Internal');
+});
+
+it('persists attachments through internal delivery', function () {
+    $default = Inbox::query()->forceCreate([
+        'name' => 'Default',
+        'api_key' => Inbox::hashToken(Str::random(40)),
+        'is_default' => true,
+    ]);
+
+    config()->set('mailulator.driver.url', null);
+    config()->set('mailulator.receiver.enabled', true);
+    config()->set('mailulator.driver.on_failure', 'throw');
+    config()->set('mailulator.receiver.storage.attachments_disk', 'local');
+
+    Http::preventStrayRequests();
+
+    Mail::send([], [], function ($msg) {
+        $msg->from('a@b.com')
+            ->to('c@d.com')
+            ->subject('With attachment')
+            ->text('body')
+            ->attachData('binary-content', 'report.txt', ['mime' => 'text/plain']);
+    });
+
+    $email = Email::query()->where('inbox_id', $default->id)->firstOrFail();
+    expect($email->attachments)->toHaveCount(1);
+    expect($email->attachments->first()->filename)->toBe('report.txt')
+        ->and($email->attachments->first()->mime_type)->toBe('text/plain')
+        ->and($email->attachments->first()->size)->toBe(strlen('binary-content'));
+});
+
+it('fails internal delivery when no default inbox exists', function () {
+    config()->set('mailulator.driver.url', null);
+    config()->set('mailulator.driver.token', null);
+    config()->set('mailulator.receiver.enabled', true);
+    config()->set('mailulator.driver.on_failure', 'throw');
+
+    expect(fn () => Mail::raw('x', fn ($m) => $m->from('a@b.com')->to('c@d.com')->subject('x')))
+        ->toThrow(TransportException::class);
+});

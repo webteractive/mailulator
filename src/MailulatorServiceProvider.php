@@ -214,11 +214,15 @@ class MailulatorServiceProvider extends ServiceProvider
         }
 
         Mail::extend('mailulator', function (array $config = []) {
+            $url = (string) config('mailulator.driver.url');
+            $internal = $url === '' && (bool) config('mailulator.receiver.enabled');
+
             return new MailulatorTransport(
-                url: (string) config('mailulator.driver.url'),
+                url: $url,
                 token: (string) config('mailulator.driver.token'),
                 timeout: (int) config('mailulator.driver.timeout', 5),
                 onFailure: (string) config('mailulator.driver.on_failure', 'log'),
+                internal: $internal,
             );
         });
     }
