@@ -1,48 +1,61 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Status
-
-Greenfield. Only `PRD.md` exists — no code, no `composer.json`, no migrations. Anything beyond the PRD has yet to be built. Read `PRD.md` before making architectural decisions; it's the source of truth.
+Guidance for Claude Code when working in this repository.
 
 ## Product
 
-Mailulator is a self-hosted, Laravel-native Mailtrap alternative. Two deliverables:
+`webteractive/mailulator` — self-hosted, Laravel-native email testing. One Composer package ships both sides:
 
-1. **Receiver App** — standalone Laravel app (Horizon/Telescope-style: installable into an existing app or deployed alone) that ingests emails over HTTP, stores them, and renders a Livewire inspection UI.
-2. **Driver Package** — Composer package registering a custom Symfony Mailer transport via `Mail::extend('mailulator', ...)`. Serializes `SentMessage` to JSON and POSTs to the receiver. No UI, no storage, no routes.
+- **Receiver** — ingest API + Vue 3 SPA (`/mailulator`) + isolated DB.
+- **Driver** — Symfony Mailer transport registered as `mailulator`.
 
-End-to-end path: sender Laravel app → driver package → `POST /api/emails` (Bearer token) → receiver resolves token to inbox → stores email + attachments → Livewire UI.
+Either side is independently disable-able via `MAILULATOR_RECEIVER_ENABLED` / `MAILULATOR_DRIVER_ENABLED`.
 
-## Architectural Constraints (from PRD — do not violate without updating PRD)
+## Architecture
 
-- **HTTP-only.** No SMTP. Non-goal for v1.
-- **Token-to-inbox routing.** The bearer token alone determines which inbox an email lands in. Tokens are hashed at rest (Sanctum-style). One token = one inbox.
-- **Isolated database connection.** Receiver uses its own `mailulator` connection — never the host app's primary DB. Default SQLite at `database/mailulator.sqlite`; swappable to any Laravel driver via `MAILULATOR_DB_*` env vars. All migrations run against `mailulator` connection only.
-- **Realtime is configurable, not assumed.** Default `polling` (`wire:poll`); `broadcast` via Reverb/Pusher is opt-in. Keep the default install dependency-free.
-- **First registered user becomes admin.** Two roles: admin (manages inboxes/keys/users/retention) and user (views assigned inboxes).
-- **Attachments stored on a configurable disk** (`MAILULATOR_ATTACHMENTS_DISK`), not inlined in the DB.
+Horizon/Telescope-style:
 
-## Data Model Summary
+- `MailulatorServiceProvider` (package) registers routes, config, migrations, transport, broadcast channels.
+- `MailulatorApplicationServiceProvider` (abstract) — host app extends it in `app/Providers/MailulatorServiceProvider.php` to define the gate, `canViewInbox`, and `manage` closures.
+- Static `Mailulator::` configurator. Default gate: local environment only.
+- `mailulator:install` publishes the stub provider + config + assets and seeds a protected `Default` inbox.
 
-- `inboxes` — name, hashed `api_key`, `retention_days` (nullable = forever), `last_used_at`.
-- `emails` — `inbox_id` FK, from/to/cc/bcc, subject, `html_body`, `text_body`, raw `headers` JSON, `read_at`.
-- `attachments` — `email_id` FK, filename, mime_type, size, disk, path.
+Frontend: Vue 3 + Pinia + Vue Router + shadcn-vue (reka-ui) + Tailwind (HSL tokens). Built with Vite 8; compiled `dist/` is committed and published to `public/vendor/mailulator`.
 
-## Build Order (PRD §17)
+## Hard constraints
 
-1. Data model + `POST /api/emails` with token auth and storage.
-2. Driver package (unlocks end-to-end testing).
-3. Basic Livewire UI (list + detail).
-4. Inbox management (create/revoke keys, key shown once).
-5. Realtime + polling toggle.
-6. QoL: search, bulk actions, retention pruning.
-7. Polish + docs.
+- **HTTP-only ingest.** No SMTP.
+- **Token → inbox.** The bearer token alone routes mail. Stored as `sha256` hash. One token, one inbox.
+- **Isolated `mailulator` DB connection.** Never touches the host app's primary DB. Registered in `register()` (not `boot()`) so migrations resolve. All migrations pin `protected $connection = 'mailulator'`.
+- **Default inbox is protected.** Cannot be renamed or deleted. Last remaining inbox cannot be deleted.
+- **Polling default, broadcast opt-in.** `MAILULATOR_REALTIME=polling` is dependency-free. `broadcast` requires Reverb/Pusher in the host app.
+- **Attachments on a configurable disk** (`MAILULATOR_ATTACHMENTS_DISK`), streamed via `Storage::download` — never a public URL.
 
-## Resolved Decisions (PRD §18)
+## Data model
 
-- **License:** MIT.
-- **Driver failure mode:** `MAILULATOR_ON_FAILURE` — `log` (default) | `throw` | `silent`. A receiver outage must never break the sender app's request.
-- **API payload formats:** Accept both JSON (base64 attachments) and `multipart/form-data`. Driver defaults to JSON.
-- **Admin seeding:** `php artisan mailulator:install` only. Idempotent, headless-friendly, no first-run web wizard.
+- `inboxes` — name, hashed `api_key`, `retention_days`, `is_default`, `settings` (JSON), `last_used_at`.
+- `emails` — `inbox_id`, from/to/cc/bcc, subject, html/text bodies, `headers` JSON, `read_at`.
+- `attachments` — `email_id`, filename, mime_type, size, disk, path.
+
+## Conventions
+
+- Pint runs on every commit (`vendor/bin/pint --dirty`). PHPStan level 4.
+- No FQCN inline — `use` imports at the top.
+- No comments on obvious code; docblocks only for non-obvious params or array shapes.
+- `Inbox::COLOR_REGEX` is the single source of truth for color validation.
+- Mass-assignment: `$fillable = ['name', 'retention_days', 'settings']` only. `api_key`, `is_default`, `last_used_at` require `forceCreate` / `forceFill`.
+- Tests: Pest 3 + Testbench. `:memory:` SQLite for both `testing` and `mailulator` connections.
+
+## Common workflows
+
+- `composer dev` — concurrent Vite + Testbench server (HMR).
+- `composer serve` — Testbench server only (uses built assets).
+- `composer fresh` — drops the workbench SQLite + rebuilds.
+- `composer test` / `composer analyse` / `composer format`.
+- `npm run build` — required before tagging if `resources/js/**` or `resources/css/**` changed; CI guards against stale `dist/`.
+
+## Watch-outs
+
+- `Mail::extend('mailulator', ...)` must run in `boot()`, not `register()`.
+- `app.blade.php` reads `public_path('vendor/mailulator/.vite/manifest.json')`. Never use `@vite()` — that resolves to the host app's manifest.
+- The published gate defaults to "local env only." Non-local installs without a customized gate → 403 for everyone.
