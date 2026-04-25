@@ -7,7 +7,7 @@ All notable changes to `webteractive/mailulator` will be documented in this file
 Initial release.
 
 - Bearer-token ingest API at `POST /api/emails` (JSON or multipart). Per-inbox rate limiting.
-- Isolated `mailulator` DB connection with auto-touch SQLite default; any Laravel driver supported.
+- Isolated `mailulator` DB connection with auto-touch SQLite default; any Laravel driver supported. `MAILULATOR_DB_CONNECTION` accepts any pre-defined connection name to share an existing host-app DB instead.
 - Symfony Mailer transport registered as `mailulator`. Failure modes: `log` (default), `silent`, `throw`.
 - Vue 3 SPA at `/mailulator` (shadcn-vue + Tailwind). Three-pane layout, HTML/text/headers/attachments tabs, sandboxed iframe preview, device preview toggle, dark mode.
 - Admin inbox management — create / rename / delete / regenerate key. Plaintext key shown once.

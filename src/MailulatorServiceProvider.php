@@ -52,14 +52,20 @@ class MailulatorServiceProvider extends ServiceProvider
 
     protected function registerMailulatorConnection(): void
     {
-        if (config()->has('database.connections.mailulator')) {
+        $config = config('mailulator.receiver.database');
+        $name = $config['connection'] ?? 'mailulator';
+
+        if (config()->has("database.connections.{$name}")) {
             return;
         }
 
-        $config = config('mailulator.receiver.database');
-        $connection = $config['connection'] ?? 'sqlite';
+        if ($name !== 'mailulator') {
+            return;
+        }
 
-        if ($connection === 'sqlite') {
+        $driver = $config['driver'] ?? 'sqlite';
+
+        if ($driver === 'sqlite') {
             $path = $config['sqlite_path'] ?: database_path('mailulator.sqlite');
 
             if (! file_exists($path)) {
@@ -67,7 +73,7 @@ class MailulatorServiceProvider extends ServiceProvider
                 @touch($path);
             }
 
-            config()->set('database.connections.mailulator', [
+            config()->set("database.connections.{$name}", [
                 'driver' => 'sqlite',
                 'database' => $path,
                 'prefix' => '',
@@ -77,8 +83,8 @@ class MailulatorServiceProvider extends ServiceProvider
             return;
         }
 
-        config()->set('database.connections.mailulator', [
-            'driver' => $connection,
+        config()->set("database.connections.{$name}", [
+            'driver' => $driver,
             'host' => $config['host'],
             'port' => $config['port'],
             'database' => $config['database'],

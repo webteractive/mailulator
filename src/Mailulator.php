@@ -29,6 +29,14 @@ class Mailulator
     public static $manageUsing;
 
     /**
+     * Resolve the database connection name backing Mailulator.
+     */
+    public static function connectionName(): string
+    {
+        return (string) config('mailulator.receiver.database.connection', 'mailulator');
+    }
+
+    /**
      * Register the callback that authorizes Mailulator access in non-local environments.
      */
     public static function auth(Closure $callback): void

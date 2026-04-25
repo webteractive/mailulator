@@ -99,9 +99,10 @@ A receiver outage **will not** break the sender app's request unless `MAILULATOR
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `MAILULATOR_RECEIVER_ENABLED` | `true` | Turn receiver off to install as driver-only. |
-| `MAILULATOR_DB_CONNECTION` | `sqlite` | Any Laravel DB driver (`sqlite`, `mysql`, `pgsql`, `sqlsrv`). |
+| `MAILULATOR_DB_CONNECTION` | `mailulator` | Connection **name** to use. Set to any connection defined in your host app's `config/database.php` (e.g. `mysql`) to share that DB; leave as `mailulator` for an isolated, package-managed connection. |
+| `MAILULATOR_DB_DRIVER` | `sqlite` | Driver for the auto-managed connection — only used when `MAILULATOR_DB_CONNECTION=mailulator` and the host hasn't pre-defined it. |
 | `MAILULATOR_SQLITE_PATH` | `database_path('mailulator.sqlite')` | SQLite file, auto-touched. |
-| `MAILULATOR_DB_HOST` / `_PORT` / `_DATABASE` / `_USERNAME` / `_PASSWORD` / `_CHARSET` | — | Non-SQLite connection settings. |
+| `MAILULATOR_DB_HOST` / `_PORT` / `_DATABASE` / `_USERNAME` / `_PASSWORD` / `_CHARSET` | — | Credentials for the auto-managed connection (non-SQLite drivers). |
 | `MAILULATOR_ATTACHMENTS_DISK` | `local` | Filesystem disk for attachment bytes. |
 | `MAILULATOR_RATE_LIMIT` | `600` | Ingest requests/min per inbox. |
 | `MAILULATOR_RETENTION_DAYS` | `30` | Default retention for newly created inboxes. Per-inbox override available; `null` keeps forever. |
@@ -111,6 +112,12 @@ A receiver outage **will not** break the sender app's request unless `MAILULATOR
 | `MAILULATOR_REALTIME` | `polling` | `polling` or `broadcast`. |
 | `MAILULATOR_POLL_INTERVAL` | `3` | Polling interval (seconds). |
 | `MAILULATOR_BROADCASTER` | `reverb` | `reverb` or `pusher` when `MAILULATOR_REALTIME=broadcast`. |
+
+### Database isolation
+
+By default, Mailulator manages its own `mailulator` connection — pointed at SQLite (`database/mailulator.sqlite`) but configurable to MySQL/Postgres/etc. via the `MAILULATOR_DB_*` env vars. The package never touches your host app's primary DB.
+
+To share an existing connection from `config/database.php`, set `MAILULATOR_DB_CONNECTION` to that connection's **name** (e.g. `mysql`). Mailulator then uses the host-defined connection as-is and ignores the `MAILULATOR_DB_DRIVER` / host / credentials env vars.
 
 ## Ingest API
 

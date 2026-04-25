@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Webteractive\Mailulator\Mailulator;
 
 /**
  * @property int $id
@@ -27,9 +28,12 @@ use Illuminate\Support\Carbon;
  */
 class Email extends Model
 {
-    protected $connection = 'mailulator';
-
     protected $guarded = [];
+
+    public function getConnectionName(): ?string
+    {
+        return Mailulator::connectionName();
+    }
 
     public $timestamps = false;
 

@@ -7,15 +7,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    protected $connection = 'mailulator';
+    public function getConnection(): string
+    {
+        return config('mailulator.receiver.database.connection', 'mailulator');
+    }
 
     public function up(): void
     {
-        Schema::connection('mailulator')->table('inboxes', function (Blueprint $table) {
+        Schema::connection($this->getConnection())->table('inboxes', function (Blueprint $table) {
             $table->boolean('is_default')->default(false)->after('retention_days');
         });
 
-        DB::connection('mailulator')
+        DB::connection($this->getConnection())
             ->table('inboxes')
             ->where('name', 'Default')
             ->update(['is_default' => true]);
@@ -23,7 +26,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::connection('mailulator')->table('inboxes', function (Blueprint $table) {
+        Schema::connection($this->getConnection())->table('inboxes', function (Blueprint $table) {
             $table->dropColumn('is_default');
         });
     }

@@ -6,11 +6,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    protected $connection = 'mailulator';
+    public function getConnection(): string
+    {
+        return config('mailulator.receiver.database.connection', 'mailulator');
+    }
 
     public function up(): void
     {
-        Schema::connection($this->connection)->create('emails', function (Blueprint $table) {
+        Schema::connection($this->getConnection())->create('emails', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->foreignId('inbox_id')->constrained('inboxes')->cascadeOnDelete();
             $table->string('from');
@@ -30,6 +33,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::connection($this->connection)->dropIfExists('emails');
+        Schema::connection($this->getConnection())->dropIfExists('emails');
     }
 };

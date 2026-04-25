@@ -6,11 +6,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    protected $connection = 'mailulator';
+    public function getConnection(): string
+    {
+        return config('mailulator.receiver.database.connection', 'mailulator');
+    }
 
     public function up(): void
     {
-        Schema::connection($this->connection)->create('inboxes', function (Blueprint $table) {
+        Schema::connection($this->getConnection())->create('inboxes', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('name');
             $table->string('api_key', 64)->unique();
@@ -22,6 +25,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::connection($this->connection)->dropIfExists('inboxes');
+        Schema::connection($this->getConnection())->dropIfExists('inboxes');
     }
 };

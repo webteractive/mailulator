@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Webteractive\Mailulator\Mailulator;
 
 /**
  * @property int $id
@@ -24,9 +25,12 @@ class Inbox extends Model
 {
     public const COLOR_REGEX = '/^#[0-9a-fA-F]{6}$/';
 
-    protected $connection = 'mailulator';
-
     protected $fillable = ['name', 'retention_days', 'settings'];
+
+    public function getConnectionName(): ?string
+    {
+        return Mailulator::connectionName();
+    }
 
     protected $hidden = ['api_key'];
 

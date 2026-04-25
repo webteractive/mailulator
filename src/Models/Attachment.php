@@ -5,6 +5,7 @@ namespace Webteractive\Mailulator\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Webteractive\Mailulator\Mailulator;
 
 /**
  * @property int $id
@@ -19,9 +20,12 @@ use Illuminate\Support\Carbon;
  */
 class Attachment extends Model
 {
-    protected $connection = 'mailulator';
-
     protected $guarded = [];
+
+    public function getConnectionName(): ?string
+    {
+        return Mailulator::connectionName();
+    }
 
     public $timestamps = false;
 

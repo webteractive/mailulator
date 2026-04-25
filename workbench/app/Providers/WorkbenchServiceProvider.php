@@ -28,11 +28,13 @@ class WorkbenchServiceProvider extends ServiceProvider
         Mailulator::manage(fn () => true);
 
         $this->app->booted(function () {
-            if (! config()->has('database.connections.mailulator')) {
+            $connection = Mailulator::connectionName();
+
+            if (! config()->has("database.connections.{$connection}")) {
                 return;
             }
 
-            if (! Schema::connection('mailulator')->hasTable('inboxes')) {
+            if (! Schema::connection($connection)->hasTable('inboxes')) {
                 return;
             }
 

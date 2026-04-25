@@ -6,18 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    protected $connection = 'mailulator';
+    public function getConnection(): string
+    {
+        return config('mailulator.receiver.database.connection', 'mailulator');
+    }
 
     public function up(): void
     {
-        Schema::connection('mailulator')->table('inboxes', function (Blueprint $table) {
+        Schema::connection($this->getConnection())->table('inboxes', function (Blueprint $table) {
             $table->json('settings')->nullable()->after('retention_days');
         });
     }
 
     public function down(): void
     {
-        Schema::connection('mailulator')->table('inboxes', function (Blueprint $table) {
+        Schema::connection($this->getConnection())->table('inboxes', function (Blueprint $table) {
             $table->dropColumn('settings');
         });
     }

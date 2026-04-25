@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Symfony\Component\Console\Attribute\AsCommand;
+use Webteractive\Mailulator\Mailulator;
 use Webteractive\Mailulator\Models\Inbox;
 
 #[AsCommand(name: 'mailulator:install')]
@@ -30,7 +31,7 @@ class InstallCommand extends Command
 
         if (! $this->option('no-migrate')) {
             $this->components->task('Migrations', function () {
-                Artisan::call('migrate', ['--database' => 'mailulator', '--force' => true], $this->output);
+                Artisan::call('migrate', ['--database' => Mailulator::connectionName(), '--force' => true], $this->output);
 
                 return true;
             });
@@ -86,7 +87,7 @@ class InstallCommand extends Command
 
     protected function ensureDefaultInbox(): void
     {
-        if (! DB::connection('mailulator')->getSchemaBuilder()->hasTable('inboxes')) {
+        if (! DB::connection(Mailulator::connectionName())->getSchemaBuilder()->hasTable('inboxes')) {
             return;
         }
 

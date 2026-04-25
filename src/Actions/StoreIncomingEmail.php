@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Webteractive\Mailulator\Events\EmailReceived;
 use Webteractive\Mailulator\Http\Requests\StoreEmailRequest;
+use Webteractive\Mailulator\Mailulator;
 use Webteractive\Mailulator\Models\Attachment;
 use Webteractive\Mailulator\Models\Email;
 use Webteractive\Mailulator\Models\Inbox;
@@ -16,7 +17,7 @@ class StoreIncomingEmail
 {
     public function __invoke(Inbox $inbox, StoreEmailRequest $request): Email
     {
-        return DB::connection('mailulator')->transaction(function () use ($inbox, $request) {
+        return DB::connection(Mailulator::connectionName())->transaction(function () use ($inbox, $request) {
             $email = $inbox->emails()->create([
                 'from' => $request->input('from'),
                 'to' => $request->input('to', []),

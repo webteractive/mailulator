@@ -17,7 +17,8 @@ return [
         'enabled' => env('MAILULATOR_RECEIVER_ENABLED', true),
 
         'database' => [
-            'connection' => env('MAILULATOR_DB_CONNECTION', 'sqlite'),
+            'connection' => env('MAILULATOR_DB_CONNECTION', 'mailulator'),
+            'driver' => env('MAILULATOR_DB_DRIVER', 'sqlite'),
             'sqlite_path' => env('MAILULATOR_SQLITE_PATH'),
             'host' => env('MAILULATOR_DB_HOST'),
             'port' => env('MAILULATOR_DB_PORT'),
