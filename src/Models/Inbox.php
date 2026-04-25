@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property string $api_key
  * @property int|null $retention_days
+ * @property bool $is_default
  * @property array<string, mixed>|null $settings
  * @property Carbon|null $last_used_at
  * @property Carbon|null $created_at
@@ -21,15 +22,18 @@ use Illuminate\Support\Carbon;
  */
 class Inbox extends Model
 {
+    public const COLOR_REGEX = '/^#[0-9a-fA-F]{6}$/';
+
     protected $connection = 'mailulator';
 
-    protected $guarded = [];
+    protected $fillable = ['name', 'retention_days', 'settings'];
 
     protected $hidden = ['api_key'];
 
     protected $casts = [
         'last_used_at' => 'datetime',
         'retention_days' => 'integer',
+        'is_default' => 'boolean',
         'settings' => 'array',
     ];
 

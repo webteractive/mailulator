@@ -13,7 +13,7 @@ beforeEach(function () {
     Mailulator::canViewInbox(fn () => true);
     Mailulator::manage(fn () => true);
 
-    $this->inbox = Inbox::query()->create([
+    $this->inbox = Inbox::query()->forceCreate([
         'name' => 'QoL',
         'api_key' => Inbox::hashToken(Str::random(40)),
         'retention_days' => 7,
@@ -108,7 +108,7 @@ it('prunes emails older than each inbox retention_days', function () {
 });
 
 it('prune skips inboxes with null retention_days', function () {
-    $other = Inbox::query()->create([
+    $other = Inbox::query()->forceCreate([
         'name' => 'forever',
         'api_key' => Inbox::hashToken(Str::random(40)),
         'retention_days' => null,

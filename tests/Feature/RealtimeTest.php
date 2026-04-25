@@ -7,7 +7,7 @@ use Webteractive\Mailulator\Models\Inbox;
 
 beforeEach(function () {
     $this->plaintext = Str::random(40);
-    $this->inbox = Inbox::query()->create([
+    $this->inbox = Inbox::query()->forceCreate([
         'name' => 'RT',
         'api_key' => Inbox::hashToken($this->plaintext),
     ]);

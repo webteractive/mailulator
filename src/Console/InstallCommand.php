@@ -96,9 +96,10 @@ class InstallCommand extends Command
 
         $plaintext = Str::random(40);
 
-        Inbox::query()->create([
+        Inbox::query()->forceCreate([
             'name' => 'Default',
             'api_key' => Inbox::hashToken($plaintext),
+            'is_default' => true,
         ]);
 
         $this->newLine();

@@ -94,7 +94,7 @@ it('stays silent on failure when on_failure=silent', function () {
 
 it('delivers end-to-end through the mailulator ingest endpoint', function () {
     $plaintext = Str::random(40);
-    $inbox = Inbox::query()->create([
+    $inbox = Inbox::query()->forceCreate([
         'name' => 'E2E',
         'api_key' => Inbox::hashToken($plaintext),
     ]);

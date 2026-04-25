@@ -39,7 +39,7 @@ it('SPA shell emits a csrf-token meta tag for the fetch wrapper fallback', funct
 
 it('ingest endpoint ignores missing CSRF because it is stateless', function () {
     $plaintext = Str::random(40);
-    Inbox::query()->create([
+    Inbox::query()->forceCreate([
         'name' => 'CSRF',
         'api_key' => Inbox::hashToken($plaintext),
     ]);

@@ -7,7 +7,7 @@ use Webteractive\Mailulator\Models\Attachment;
 use Webteractive\Mailulator\Models\Inbox;
 
 beforeEach(function () {
-    $this->inbox = Inbox::query()->create([
+    $this->inbox = Inbox::query()->forceCreate([
         'name' => 'SPA Inbox',
         'api_key' => Inbox::hashToken(Str::random(40)),
     ]);
@@ -31,7 +31,7 @@ it('returns 403 when gate fails', function () {
 });
 
 it('lists inboxes visible to the user', function () {
-    $hidden = Inbox::query()->create([
+    $hidden = Inbox::query()->forceCreate([
         'name' => 'Hidden',
         'api_key' => Inbox::hashToken(Str::random(40)),
     ]);

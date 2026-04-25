@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Str;
+use Webteractive\Mailulator\Actions\CreateInbox;
 use Webteractive\Mailulator\Mailulator;
 use Webteractive\Mailulator\Models\Inbox;
 
@@ -30,7 +31,7 @@ it('creates an inbox and returns a plaintext key shown once', function () {
 
 it('regenerating a key invalidates the old token at the ingest boundary', function () {
     $oldPlaintext = Str::random(40);
-    $inbox = Inbox::query()->create([
+    $inbox = Inbox::query()->forceCreate([
         'name' => 'Inbox',
         'api_key' => Inbox::hashToken($oldPlaintext),
     ]);
@@ -63,7 +64,7 @@ it('forbids non-admin users from admin endpoints', function () {
 });
 
 it('updates inbox name and retention', function () {
-    $inbox = Inbox::query()->create([
+    $inbox = Inbox::query()->forceCreate([
         'name' => 'Old',
         'api_key' => Inbox::hashToken(Str::random(40)),
     ]);
@@ -79,12 +80,12 @@ it('updates inbox name and retention', function () {
 });
 
 it('deletes an inbox and cascades emails when more than one exists', function () {
-    Inbox::query()->create([
+    Inbox::query()->forceCreate([
         'name' => 'Keeper',
         'api_key' => Inbox::hashToken(Str::random(40)),
     ]);
 
-    $inbox = Inbox::query()->create([
+    $inbox = Inbox::query()->forceCreate([
         'name' => 'Temp',
         'api_key' => Inbox::hashToken(Str::random(40)),
     ]);
@@ -102,7 +103,7 @@ it('deletes an inbox and cascades emails when more than one exists', function ()
 });
 
 it('refuses to delete the last remaining inbox', function () {
-    $inbox = Inbox::query()->create([
+    $inbox = Inbox::query()->forceCreate([
         'name' => 'Only',
         'api_key' => Inbox::hashToken(Str::random(40)),
     ]);
@@ -115,9 +116,10 @@ it('refuses to delete the last remaining inbox', function () {
 });
 
 it('refuses to rename the Default inbox', function () {
-    $default = Inbox::query()->create([
+    $default = Inbox::query()->forceCreate([
         'name' => 'Default',
         'api_key' => Inbox::hashToken(Str::random(40)),
+        'is_default' => true,
     ]);
 
     $this->patchJson("/mailulator/api/inboxes/{$default->id}", ['name' => 'Renamed'])
@@ -128,12 +130,13 @@ it('refuses to rename the Default inbox', function () {
 });
 
 it('refuses to delete the Default inbox even when others exist', function () {
-    $default = Inbox::query()->create([
+    $default = Inbox::query()->forceCreate([
         'name' => 'Default',
         'api_key' => Inbox::hashToken(Str::random(40)),
+        'is_default' => true,
     ]);
 
-    Inbox::query()->create([
+    Inbox::query()->forceCreate([
         'name' => 'Other',
         'api_key' => Inbox::hashToken(Str::random(40)),
     ]);
@@ -164,7 +167,7 @@ it('rejects malformed inbox colors', function () {
 });
 
 it('clears inbox color when set to null', function () {
-    $inbox = Inbox::query()->create([
+    $inbox = Inbox::query()->forceCreate([
         'name' => 'Tinted',
         'api_key' => Inbox::hashToken(Str::random(40)),
         'settings' => ['color' => '#a1b2c3'],
@@ -173,4 +176,49 @@ it('clears inbox color when set to null', function () {
     $this->patchJson("/mailulator/api/inboxes/{$inbox->id}", ['color' => null])->assertOk();
 
     expect($inbox->fresh()->settings)->toBeNull();
+});
+
+it('renames a non-default inbox', function () {
+    $inbox = Inbox::query()->forceCreate([
+        'name' => 'Original',
+        'api_key' => Inbox::hashToken(Str::random(40)),
+    ]);
+
+    $this->patchJson("/mailulator/api/inboxes/{$inbox->id}", ['name' => 'Renamed'])->assertOk();
+
+    expect($inbox->fresh()->name)->toBe('Renamed');
+});
+
+it('allows the Default inbox to PATCH with the same name', function () {
+    $default = Inbox::query()->forceCreate([
+        'name' => 'Default',
+        'api_key' => Inbox::hashToken(Str::random(40)),
+        'is_default' => true,
+    ]);
+
+    $this->patchJson("/mailulator/api/inboxes/{$default->id}", [
+        'name' => 'Default',
+        'retention_days' => 14,
+    ])->assertOk();
+
+    expect($default->fresh()->retention_days)->toBe(14);
+});
+
+it('CreateInbox action rejects malformed colors', function () {
+    $action = app(CreateInbox::class);
+
+    expect(fn () => $action('Bad', null, ['color' => 'red']))
+        ->toThrow(InvalidArgumentException::class);
+});
+
+it('CreateInbox action drops unknown settings keys', function () {
+    $action = app(CreateInbox::class);
+
+    $result = $action('Allowlist', null, [
+        'color' => '#a1b2c3',
+        'evil_flag' => true,
+        'webhook_url' => 'https://x.test',
+    ]);
+
+    expect($result['inbox']->settings)->toBe(['color' => '#a1b2c3']);
 });

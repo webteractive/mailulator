@@ -32,7 +32,7 @@ class InboxController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'retention_days' => ['nullable', 'integer', 'min:1'],
-            'color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'color' => ['nullable', 'string', 'regex:'.Inbox::COLOR_REGEX],
         ]);
 
         $result = $create(
@@ -52,10 +52,10 @@ class InboxController extends Controller
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
             'retention_days' => ['sometimes', 'nullable', 'integer', 'min:1'],
-            'color' => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'color' => ['sometimes', 'nullable', 'string', 'regex:'.Inbox::COLOR_REGEX],
         ]);
 
-        if ($inbox->name === 'Default' && isset($data['name']) && $data['name'] !== 'Default') {
+        if ($inbox->is_default && isset($data['name']) && $data['name'] !== $inbox->name) {
             return response()->json([
                 'message' => 'The Default inbox cannot be renamed.',
             ], 422);
@@ -81,7 +81,7 @@ class InboxController extends Controller
 
     public function destroy(Inbox $inbox): JsonResponse
     {
-        if ($inbox->name === 'Default') {
+        if ($inbox->is_default) {
             return response()->json([
                 'message' => 'The Default inbox cannot be deleted.',
             ], 422);

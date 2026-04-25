@@ -36,9 +36,10 @@ class WorkbenchServiceProvider extends ServiceProvider
                 return;
             }
 
-            Inbox::query()->create([
+            Inbox::query()->forceCreate([
                 'name' => 'Default',
                 'api_key' => Inbox::hashToken('mailulator-local-dev-token'),
+                'is_default' => true,
             ]);
         });
     }
