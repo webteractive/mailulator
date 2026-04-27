@@ -4,6 +4,11 @@ All notable changes to `webteractive/mailulator` will be documented in this file
 
 ## Unreleased
 
+## 0.1.1 - 2026-04-27
+
+### Changed
+- Tighten `composer.json` to `minimum-stability: stable`. All dependencies are tagged stable releases; no behavior change.
+
 ## 0.1.0 - 2026-04-27
 
 First public release.
