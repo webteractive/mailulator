@@ -4,6 +4,15 @@ All notable changes to `webteractive/mailulator` will be documented in this file
 
 ## Unreleased
 
+## 0.1.2 - 2026-04-27
+
+### Fixed
+- README Laravel constraint corrected to `^11 || ^12 || ^13` (Laravel 10 was dropped during 0.1.0 prep but the README still listed it).
+- README intro and Realtime section no longer claim ingest is HTTP-only or reference an outdated `mode=broadcast` env var.
+
+### Changed
+- Tightened README — removed redundant Quickstart and Database-isolation prose now covered by the deployment-modes section and config table. Reworded the post-install token note to explain why in-app installs should still save it.
+
 ## 0.1.1 - 2026-04-27
 
 ### Changed

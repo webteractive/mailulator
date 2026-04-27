@@ -2,15 +2,13 @@
 
 Self-hosted, Laravel-native email testing. One package ships both sides:
 
-- **Receiver** — ingests email via HTTP, stores it in an isolated database (default SQLite; any Laravel-supported driver works), serves a Vue 3 inbox UI at `/mailulator`.
-- **Driver** — a Symfony Mailer transport registered as `mailulator`. Set `MAIL_MAILER=mailulator` on the sender app and outbound email forwards to a Mailulator receiver over HTTP.
-
-Where the inbox UI lives is what splits the two deployment shapes — see [Deployment modes](#deployment-modes).
+- **Receiver** — stores ingested email in an isolated database (default SQLite; any Laravel-supported driver works), serves a Vue 3 inbox UI at `/mailulator`.
+- **Driver** — a Symfony Mailer transport registered as `mailulator`. Set `MAIL_MAILER=mailulator` and outbound mail flows to the receiver — over HTTP for [standalone](#2-standalone--ui-lives-in-a-dedicated-app-shared-by-many-senders) deployments, in-process for [in-app](#1-in-app--ui-lives-with-the-app-it-captures) ones.
 
 ## Requirements
 
 - PHP `^8.3`
-- Laravel `^10 || ^11 || ^12 || ^13`
+- Laravel `^11 || ^12 || ^13`
 
 ## Install
 
@@ -24,9 +22,9 @@ php artisan mailulator:install
 - `app/Providers/MailulatorServiceProvider.php` — customize the auth gate here.
 - `config/mailulator.php` — receiver + driver config.
 
-It then runs migrations against the isolated `mailulator` connection and creates a protected `Default` inbox. The Default inbox cannot be renamed or deleted; Mailulator requires at least one inbox to exist at all times.
+It then runs migrations against the isolated `mailulator` connection and creates a protected `Default` inbox (it cannot be renamed or deleted; at least one inbox must always exist).
 
-The install command prints a token. You only need it for [standalone](#2-standalone--ui-lives-in-a-dedicated-app-shared-by-many-senders) installs — [in-app](#1-in-app--ui-lives-with-the-app-it-captures) installs ignore it. Save it either way; it isn't shown again.
+The install prints the `Default` inbox's bearer token. [In-app](#1-in-app--ui-lives-with-the-app-it-captures) deployments don't need it for delivery, but save it anyway — any sender app you later point at this receiver will need it, and it isn't shown again.
 
 Publish compiled UI assets:
 
@@ -49,7 +47,7 @@ The app sending the mail is also the app you read it from. Install Mailulator th
 MAIL_MAILER=mailulator
 ```
 
-No URL, no token. The transport detects in-app mode (driver enabled + receiver enabled + no `MAILULATOR_URL`) and writes directly to the `Default` inbox via `StoreIncomingEmail`, bypassing HTTP entirely.
+No URL, no token. The transport detects in-app mode (driver enabled + receiver enabled + no `MAILULATOR_URL`) and writes directly to the `Default` inbox via `StoreIncomingEmail`, bypassing HTTP entirely. Open `/mailulator` on the same app to read the captured mail.
 
 Best for: local development, staging, demo environments — any app that just wants to "swallow" its own outbound mail and read it back in place.
 
@@ -78,15 +76,7 @@ MAILULATOR_RECEIVER_ENABLED=false
 MAILULATOR_DRIVER_ENABLED=true
 ```
 
-To onboard another sender app, repeat the sender-side `.env` with a different inbox token. The receiver doesn't care how many apps point at it.
-
-## Quickstart
-
-```php
-Mail::to('test@example.com')->send(new OrderShipped($order));
-```
-
-Open `/mailulator` on the receiver — the email lands within the polling interval.
+To onboard another sender app, repeat the sender-side `.env` with a different inbox token. The receiver doesn't care how many apps point at it. Open `/mailulator` on the receiver to read mail across all inboxes.
 
 ## Gate
 
@@ -152,12 +142,6 @@ A receiver outage **will not** break the sender app's request unless `MAILULATOR
 | `MAILULATOR_POLL_INTERVAL` | `3` | Polling interval (seconds). |
 | `MAILULATOR_BROADCASTER` | `reverb` | `reverb` or `pusher` when `MAILULATOR_REALTIME=broadcast`. |
 
-### Database isolation
-
-By default, Mailulator manages its own `mailulator` connection — pointed at SQLite (`database/mailulator.sqlite`) but configurable to MySQL/Postgres/etc. via the `MAILULATOR_DB_*` env vars. The package never touches your host app's primary DB.
-
-To share an existing connection from `config/database.php`, set `MAILULATOR_DB_CONNECTION` to that connection's **name** (e.g. `mysql`). Mailulator then uses the host-defined connection as-is and ignores the `MAILULATOR_DB_DRIVER` / host / credentials env vars.
-
 ## Ingest API
 
 `POST /api/emails` — bearer-token authenticated, rate-limited per inbox.
@@ -186,7 +170,7 @@ MAILULATOR_ECHO_PORT=...
 MAILULATOR_ECHO_SCHEME=https
 ```
 
-`EmailReceived` dispatches to `mailulator.inbox.{id}` on every ingest. Channel authorization routes through `Mailulator::canViewInbox`. If `mode=broadcast` is set without a configured `MAILULATOR_ECHO_KEY`, the client logs a warning and falls back to polling.
+`EmailReceived` dispatches to `mailulator.inbox.{id}` on every ingest. Channel authorization routes through `Mailulator::canViewInbox`. If `MAILULATOR_REALTIME=broadcast` is set without a configured `MAILULATOR_ECHO_KEY`, the client logs a warning and falls back to polling.
 
 ## Inboxes
 
