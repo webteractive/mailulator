@@ -82,8 +82,11 @@ return [
     |--------------------------------------------------------------------------
     |
     | The driver side of Mailulator: a Symfony Mailer transport registered
-    | as `mailulator` via Mail::extend(). Set MAIL_MAILER=mailulator on the
-    | sender app to forward outbound email to a Mailulator receiver.
+    | as `mailulator` via Mail::extend(). Set MAIL_MAILER=mailulator to route
+    | outbound mail through it. With no MAILULATOR_URL set and the receiver
+    | enabled in this same app (in-app mode), the transport persists directly
+    | to the Default inbox. With a URL + token set, it posts to a standalone
+    | receiver over HTTP.
     |
     */
 

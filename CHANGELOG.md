@@ -2,6 +2,12 @@
 
 All notable changes to `webteractive/mailulator` will be documented in this file.
 
+## Unreleased
+
+- Zero-config in-app delivery: when receiver and driver are both enabled and `MAILULATOR_URL` is unset, the transport persists directly to the `Default` inbox via `StoreIncomingEmail` and bypasses HTTP.
+- README documents the two deployment shapes — **In-app** (UI lives in the same app that sends mail) and **Standalone** (dedicated receiver shared by many sender apps).
+- Pluggable connection name + Pest 4 + AGENTS.md.
+
 ## 1.0.0 - 2026-04-25
 
 Initial release.

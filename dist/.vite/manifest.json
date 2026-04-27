@@ -6,7 +6,7 @@
     "isDynamicEntry": true
   },
   "node_modules/pusher-js/dist/web/pusher.js": {
-    "file": "assets/pusher-lLfMcATt.js",
+    "file": "assets/pusher-DQpS0DfJ.js",
     "name": "pusher",
     "src": "node_modules/pusher-js/dist/web/pusher.js",
     "isDynamicEntry": true,
@@ -19,7 +19,7 @@
     "src": "resources/fonts/inter-latin.woff2"
   },
   "resources/js/app.js": {
-    "file": "assets/app-CSzX39Go.js",
+    "file": "assets/app-zYNxEmZG.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -28,7 +28,7 @@
       "node_modules/pusher-js/dist/web/pusher.js"
     ],
     "css": [
-      "assets/app-CLrEnhIB.css"
+      "assets/app-CoD85zMP.css"
     ],
     "assets": [
       "assets/inter-latin-Dx4kXJAl.woff2"

@@ -5,7 +5,7 @@ Self-hosted, Laravel-native email testing. One package ships both sides:
 - **Receiver** — ingests email via HTTP, stores it in an isolated database (default SQLite; any Laravel-supported driver works), serves a Vue 3 inbox UI at `/mailulator`.
 - **Driver** — a Symfony Mailer transport registered as `mailulator`. Set `MAIL_MAILER=mailulator` on the sender app and outbound email forwards to a Mailulator receiver over HTTP.
 
-Either side can be disabled via config — install the same package as a pure sender, a pure receiver, or both.
+Where the inbox UI lives is what splits the two deployment shapes — see [Deployment modes](#deployment-modes).
 
 ## Requirements
 
@@ -26,7 +26,7 @@ php artisan mailulator:install
 
 It then runs migrations against the isolated `mailulator` connection and creates a protected `Default` inbox. The Default inbox cannot be renamed or deleted; Mailulator requires at least one inbox to exist at all times.
 
-The install command prints a token. You only need it for [separate-app](#2-separate-app-http-ingest) installs — same-app installs ignore it. Save it either way; it isn't shown again.
+The install command prints a token. You only need it for [standalone](#2-standalone--ui-lives-in-a-dedicated-app-shared-by-many-senders) installs — [in-app](#1-in-app--ui-lives-with-the-app-it-captures) installs ignore it. Save it either way; it isn't shown again.
 
 Publish compiled UI assets:
 
@@ -38,24 +38,24 @@ Re-run this tag after each `composer update`.
 
 ## Deployment modes
 
-Mailulator runs in one of two shapes. Pick whichever fits the app you're working on.
+Two shapes, distinguished by where the inbox UI lives.
 
-### 1. Same-app (zero-config)
+### 1. In-app — UI lives with the app it captures
 
-Install the package in the app whose mail you want to capture. Both receiver and driver run in the same process.
+The app sending the mail is also the app you read it from. Install Mailulator there, set `MAIL_MAILER=mailulator`, and the captured mail shows up at `/mailulator` on the same host. One app, one inbox, no plumbing.
 
 ```bash
 # .env
 MAIL_MAILER=mailulator
 ```
 
-That's it — no URL, no token. The transport detects same-app mode (driver enabled + receiver enabled + no `MAILULATOR_URL`) and writes directly to the `Default` inbox via `StoreIncomingEmail`, bypassing HTTP entirely. Open `/mailulator` on the same app to read the captured mail.
+No URL, no token. The transport detects in-app mode (driver enabled + receiver enabled + no `MAILULATOR_URL`) and writes directly to the `Default` inbox via `StoreIncomingEmail`, bypassing HTTP entirely.
 
-Best for: local development, staging, demo environments, any app that just wants to "swallow" its own outbound mail.
+Best for: local development, staging, demo environments — any app that just wants to "swallow" its own outbound mail and read it back in place.
 
-### 2. Separate-app (standalone receiver, many senders)
+### 2. Standalone — UI lives in a dedicated app, shared by many senders
 
-Run Mailulator as a standalone receiver — a single Laravel app whose only job is to capture mail — and point any number of sender apps at it. One inbox UI, one shared retention policy, one place to look for mail across every project on a machine, team, or environment.
+A single Laravel app exists just to host inboxes and the UI. Any number of other apps point at it via `MAILULATOR_URL` and route to the right inbox via `MAILULATOR_TOKEN`. One UI, many senders.
 
 **On the standalone receiver** — install the package as receiver-only:
 
@@ -65,9 +65,9 @@ MAILULATOR_RECEIVER_ENABLED=true
 MAILULATOR_DRIVER_ENABLED=false
 ```
 
-Create one inbox per sender app from the UI (or keep them on the seeded `Default`). Each inbox has its own bearer token; that token is the routing key — there is no other coupling between sender and receiver.
+Create one inbox per sender app from the UI (or reuse the seeded `Default`). Each inbox has its own bearer token; that token is the only thing that ties a sender to its inbox.
 
-**On each sender app** — install the package as driver-only and point it at the receiver:
+**On each sender app** — install the package as driver-only and point it at the receiver with the inbox's token:
 
 ```bash
 # .env
@@ -78,7 +78,7 @@ MAILULATOR_RECEIVER_ENABLED=false
 MAILULATOR_DRIVER_ENABLED=true
 ```
 
-The sender posts to the receiver's `/api/emails` over HTTP. To onboard another sender app, repeat the sender-side `.env` with a different inbox token. The receiver doesn't care how many apps point at it.
+To onboard another sender app, repeat the sender-side `.env` with a different inbox token. The receiver doesn't care how many apps point at it.
 
 ## Quickstart
 

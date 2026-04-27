@@ -9,7 +9,9 @@ Guidance for AI coding agents when working in this repository.
 - **Receiver** — ingest API + Vue 3 SPA (`/mailulator`) + isolated DB.
 - **Driver** — Symfony Mailer transport registered as `mailulator`.
 
-Either side is independently disable-able via `MAILULATOR_RECEIVER_ENABLED` / `MAILULATOR_DRIVER_ENABLED`.
+Either side is independently disable-able via `MAILULATOR_RECEIVER_ENABLED` / `MAILULATOR_DRIVER_ENABLED`. Two deployment shapes:
+- **In-app** — receiver and driver both enabled in the same host app, no `MAILULATOR_URL`. Driver bypasses HTTP and writes directly to the `Default` inbox via `StoreIncomingEmail`.
+- **Standalone** — dedicated receiver app; one or more sender apps post to it over HTTP using `MAILULATOR_URL` + per-inbox `MAILULATOR_TOKEN`.
 
 ## Architecture
 
@@ -24,7 +26,7 @@ Frontend: Vue 3 + Pinia + Vue Router + shadcn-vue (reka-ui) + Tailwind (HSL toke
 
 ## Hard constraints
 
-- **HTTP-only ingest.** No SMTP.
+- **No SMTP.** Cross-app ingest is HTTP only (`POST /api/emails`); in-app mode bypasses HTTP and persists in-process via `StoreIncomingEmail`.
 - **Token → inbox.** The bearer token alone routes mail. Stored as `sha256` hash. One token, one inbox.
 - **Isolated `mailulator` DB connection.** Never touches the host app's primary DB. Registered in `register()` (not `boot()`) so migrations resolve. All migrations pin `protected $connection = 'mailulator'`.
 - **Default inbox is protected.** Cannot be renamed or deleted. Last remaining inbox cannot be deleted.

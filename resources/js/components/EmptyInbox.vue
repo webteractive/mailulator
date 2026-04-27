@@ -7,7 +7,7 @@
         </div>
         <h2 class="text-base font-semibold">No emails yet</h2>
         <p class="text-sm text-muted-foreground">
-          Point a Laravel app at this inbox and send a message.
+          Send a message from a Laravel app to fill this inbox.
         </p>
       </div>
 
@@ -18,10 +18,14 @@
 
       <section class="space-y-2">
         <h3 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">2. Configure the mailer in .env</h3>
-        <CodeBlock :code="envSnippet" />
         <p class="text-xs text-muted-foreground">
-          Get a token from Settings → New inbox (or Regenerate key). Tokens are shown once — store safely.
+          <strong class="font-semibold text-foreground">In-app:</strong> Mailulator is installed in the same app you send from.
         </p>
+        <CodeBlock :code="inAppSnippet" />
+        <p class="text-xs text-muted-foreground pt-1">
+          <strong class="font-semibold text-foreground">Standalone:</strong> sender is a separate app pointing at this receiver. Get a token from Settings → New inbox (or Regenerate key). Tokens are shown once — store safely.
+        </p>
+        <CodeBlock :code="standaloneSnippet" />
       </section>
 
       <section class="space-y-2">
@@ -30,7 +34,7 @@
       </section>
 
       <section class="space-y-2">
-        <h3 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Or try via curl</h3>
+        <h3 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Or try via curl (standalone)</h3>
         <CodeBlock :code="curlSnippet" />
       </section>
     </div>
@@ -44,9 +48,12 @@ import CodeBlock from './CodeBlock.vue'
 
 const origin = computed(() => window.location.origin)
 
-const envSnippet = computed(() => `MAIL_MAILER=mailulator
+const inAppSnippet = `MAIL_MAILER=mailulator`
+
+const standaloneSnippet = computed(() => `MAIL_MAILER=mailulator
 MAILULATOR_URL=${origin.value}
-MAILULATOR_TOKEN=your-inbox-token`)
+MAILULATOR_TOKEN=your-inbox-token
+MAILULATOR_RECEIVER_ENABLED=false`)
 
 const tinkerSnippet = `Mail::raw('Hello from Laravel', function ($m) {
     $m->to('test@example.com')->subject('Hello');
